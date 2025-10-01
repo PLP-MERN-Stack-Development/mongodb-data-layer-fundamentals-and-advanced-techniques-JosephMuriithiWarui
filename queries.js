@@ -1,104 +1,88 @@
-// Write MongoDB queries to:
-// Find all books in a specific genre
-    db.books.find({ genre: "Fiction" })
+// queries.js
+const { MongoClient, ObjectId } = require('mongodb');
 
-// Find books published after a certain year
-    db.books.find({published_year: {$gt: 1947}})
-// Find books by a specific author
-    db.books.find({author: "Paulo Coelho"})
+const uri = 'mongodb://localhost:27017';
+const dbName = 'plp_bookstore';
 
-// Update the price of a specific book
-    db.books.updateOne({
-    _id: ObjectId('68dcfb198450a8ac428ec243')},
-    {$set: {price: 20.99}})
+async function runQueries() {
+  const client = new MongoClient(uri);
 
-// Delete a book by its title
-    db.books.deleteOne({ title: "The Alchemist" })
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const books = db.collection("books");
 
+    // 1. Find all books in a specific genre
+    await books.find({ genre: "Fiction" });
+    ;
 
-// Task 3: Advanced Queries
-// Write a query to find books that are both in stock and published after 2010
-    db.books.find({ 
-    in_stock: true,
-    published_year: { $gt: 2010 }
-    })
-
-// Use projection to return only the title, author, and price fields in your queries
-    db.books.find( {}, {
-    _id: 0,
-    title: 1,
-    author: 1,
-    price: 1
-})
-
-// Implement sorting to display books by price (both ascending and descending)
-    //Ascending
-    db.books.find().sort({price: 1})
-    //Descending
-    db.books.find().sort({price: -1})
-
-// Use the `limit` and `skip` methods to implement pagination (5 books per page)
-    //limit
-    db.books.find().limit(5).skip(0)
-    db.books.find().limit(5).skip(5)
-    db.books.find().limit(5).skip(10)
-
-// Task 4: Aggregation Pipeline
-//Create an aggregation pipeline to calculate the average price of books by genre
-    db.books.aggregate([
-    {
-        $group: {
-        _id: "$genre",                  // group by genre
-        averagePrice: { $avg: "$price"} // calculate average price
-        }
-    }
-    ])
+    // 2. Find books published after a certain year
+    await books.find({ published_year: { $gt: 1947 } }).toArray();
 
 
-// Create an aggregation pipeline to find the author with the most books in the collection
-    db.books.aggregate([
-    {
-        $group: {
-        _id: "$author",         
-        totalBooks: { $sum: 1 }
-        }
-    },
-    {
-        $sort: { totalBooks: -1 }
-    },
-    {
-        $limit: 1
-    }
-    ])
+    // 3. Find books by a specific author
+    await books.find({ author: "Paulo Coelho" }).toArray();
+    
 
-// Implement a pipeline that groups books by publication decade and counts them
-    db.books.aggregate([
-    {
-        $project: {
-        decade: { $subtract: [ { $divide: ["$published_year", 10] }, { $mod: [ { $divide: ["$published_year", 10] }, 1 ] } ] }
-        }
-    },
-    {
-        $group: {
-        _id: { $multiply: ["$decade", 10] }, // convert back to actual decade (e.g., 1990)
-        totalBooks: { $sum: 1 }
-        }
-    },
-    {
-        $sort: { _id: 1 } // sort decades in ascending order
-    }
-    ])
+    // 4. Update the price of a specific book
+    await books.updateOne(
+      { _id: new ObjectId("68dcfb198450a8ac428ec243") },
+      { $set: { price: 20.99 } }
+    );
 
-// Create an index on the `title` field for faster searches
-    db.books.createIndex({ title:1 })
+    // 5. Delete a book by its title
+    await books.deleteOne({ title: "The Alchemist" });
 
-// Create a compound index on `author` and `published_year`
-   db.books.createIndex({ author: 1, published_year: -1 })
+    // 6. Books in stock and published after 2010
+    await books.find({
+      in_stock: true,
+      published_year: { $gt: 2010 }
+    });
 
-// Use the `explain()` method to demonstrate the performance improvement with your indexes
-    db.books.find({ 
-        author: "George Orwell" }).sort({ published_year: -1 }).explain("executionStats")
+    // 7. Projection: return only title, author, price
+    await books.find(
+      {},
+      { projection: { _id: 0, title: 1, author: 1, price: 1 } }
+    );
 
+    // 8. Sorting by price
+    await books.find().sort({ price: 1 });
+    const descSort = await books.find().sort({ price: -1 });
 
+    // 9. Pagination (5 per page)
+    await books.find().limit(5).skip(0);
+    await books.find().limit(5).skip(5);
+    
 
+    // 10. Aggregation: average price by genre
+    await books.aggregate([
+      { $group: { _id: "$genre", avgPrice: { $avg: "$price" } } }
+    ]);
+    
 
+    // 11. Aggregation: author with most books
+    await books.aggregate([
+      { $group: { _id: "$author", totalBooks: { $sum: 1 } } },
+      { $sort: { totalBooks: -1 } },
+      { $limit: 1 }
+    ]);
+    
+
+    // 12. Group by decade
+    await books.aggregate([
+      { $project: { decade: { $multiply: [10, { $floor: { $divide: ["$published_year", 10] } }] } } },
+      { $group: { _id: "$decade", totalBooks: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+    
+
+    // 13. Index creation
+    await books.createIndex({ title: 1 });
+    await books.createIndex({ author: 1, published_year: -1 });
+    
+    // 14. Explain with index
+    await books.find({ author: "George Orwell" }).sort({ published_year: -1 }).explain("executionStats");
+  }
+}
+
+runQueries();
