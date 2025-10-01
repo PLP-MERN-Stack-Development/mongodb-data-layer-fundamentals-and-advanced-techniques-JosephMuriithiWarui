@@ -11,13 +11,13 @@ The database used is `books_db` with a collection named `books`.
 
 ## 📂 Project Structure
 mongodb-data-layer-fundamentals-and-advanced-techniques-JosephMuriithiWarui/
-│── week1-assignment.md
-│── queries.js
-│── insert_books.js
-│── README.md          
-│── screenshots/
-│    ├── collections.png
-│── .gitignore             
+week1-assignment.md
+queries.js
+insert_books.js
+README.md          
+screenshots/
+ collections.png
+.gitignore             
 
 ## 🚀 How to Run
 
