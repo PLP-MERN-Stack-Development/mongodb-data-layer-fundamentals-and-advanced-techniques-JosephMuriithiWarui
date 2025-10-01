@@ -30,3 +30,28 @@ Make sure MongoDB is running locally or on Atlas, then run:
 mongosh
 3. Select the Database
 use books_db
+node insert_books.js
+node queries.js
+
+
+📄 Assignment Tasks Covered
+
+Basic Queries
+Find books by genre
+Find books published after a certain year
+Find books by author
+Update book price
+Delete a book by title
+Advanced Queries
+Find in-stock books published after 2010
+Projection (title, author, price only)
+Sorting (ascending & descending by price)
+Pagination (5 books per page)
+Aggregation
+Average book price by genre
+Author with the most books
+Books grouped by decade
+Indexes
+Index on title
+Compound index on author + published_year
+Query performance check using explain()
